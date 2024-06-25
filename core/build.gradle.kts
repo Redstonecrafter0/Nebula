@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     implementation(libs.bundles.ktor.client)
-    testImplementation(libs.ktor.client.java)
+    testImplementation(libs.bundles.test)
 }
 
 kotlin {

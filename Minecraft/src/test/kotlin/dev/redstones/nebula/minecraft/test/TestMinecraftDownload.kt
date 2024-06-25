@@ -2,42 +2,62 @@ package dev.redstones.nebula.minecraft.test
 
 import dev.redstones.nebula.DownloadManager
 import dev.redstones.nebula.minecraft.*
-import dev.redstones.nebula.minecraft.dao.MinecraftVersionJson
 import io.ktor.client.engine.java.*
-import kotlinx.serialization.json.Json
+import me.tongfei.progressbar.ProgressBar
 import java.nio.file.Path
-import kotlin.io.path.readText
-
-private val json = Json {
-    ignoreUnknownKeys = true
-}
 
 suspend fun main() {
+    val steps = ProgressBar("Steps", 7)
+    var subBar: ProgressBar? = null
     val downloader = DownloadManager(Java)
     downloader.enqueue {
+        maxStep = 7
+        steps.extraMessage = "Loading versions"
+        steps.step()
         val versions = listVersionsMinecraft()!!
         val latest = versions.versions.first { it.id == versions.latest.release }
         val outputFile = Path.of("test/test.json")
+        steps.extraMessage = "Loading ${latest.id} json"
         if (!downloadMinecraftVersionJson(latest, outputFile)) {
             System.err.println("failed")
         }
+        steps.extraMessage = "Loading assets"
         if (!downloadMinecraftAssets(outputFile, Path.of("test/assets.json"), Path.of("test/objects"))) {
             System.err.println("failed")
         }
+        steps.extraMessage = "Loading client jar"
         if (!downloadMinecraftClientJar(outputFile, Path.of("test/client.jar"))) {
             System.err.println("failed")
         }
+        steps.extraMessage = "Loading server jar"
         if (!downloadMinecraftServerJar(outputFile, Path.of("test/server.jar"))) {
             System.err.println("failed")
         }
+        steps.extraMessage = "Loading logging config"
         if (!downloadMinecraftClientLoggingConfig(outputFile, Path.of("test/client-1.12.xml"))) {
             System.err.println("failed")
         }
+        steps.extraMessage = "Loading libraries"
         if (!downloadMinecraftClientLibraries(outputFile, Path.of("test/libraries"))) {
             System.err.println("failed")
         }
-        val meta = json.decodeFromString<MinecraftVersionJson>(outputFile.readText())
-        println(meta)
+    }.addEventListener {
+        onStart { step: Int, _: Int, max: Long? ->
+            subBar = if (max == null) {
+                null
+            } else {
+                ProgressBar("Downloading step $step", max)
+            }
+        }
+        onProgress {
+            if (it != null) {
+                subBar?.stepTo(it)
+            }
+        }
+        onFinished { success, message ->
+            steps.step()
+            subBar?.close()
+        }
     }
     downloader.runSingle()
 }

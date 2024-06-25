@@ -16,28 +16,49 @@ import kotlin.io.path.*
 class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQueueItem.() -> Unit) {
 
     internal var manager: DownloadManager? = null
+    internal var listeners = emptyList<DownloadEventListener>()
+    private var step = -1
+    var maxStep = 0
 
-    fun notifyStart(max: Long? = null) {
+    suspend fun notifyStart(max: Long? = null) {
+        step++
+        listeners.forEach { it.onStart(step, maxStep, max) }
     }
 
-    fun notifyProgress(pos: Long? = null) {
+    suspend fun notifyProgress(pos: Long? = null) {
+        listeners.forEach { it.onProgress(pos) }
     }
 
-    fun notifySuccess() {
+    suspend fun onRetry() {
+        listeners.forEach { it.onRetry() }
     }
 
-    fun notifyRetry() {
+    suspend fun notifyFinished(success: Boolean = true, reason: String? = null) {
+        listeners.forEach { it.onFinished(success, reason) }
     }
 
-    fun notifyFailure(final: Boolean, reason: String) {
+    fun addEventListener(block: DownloadEventListener.Builder.() -> Unit) {
+        val builder = DownloadEventListener.Builder()
+        builder.block()
+        addEventListener(builder.build())
+    }
+
+    fun addEventListener(listener: DownloadEventListener) {
+        listeners += listener
+    }
+
+    suspend fun Boolean.notifyFinishedDefault(): Boolean {
+        notifyFinished(this, if (this) "Wrong response code or hash failure" else null)
+        return this
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    suspend fun HttpStatement.executeVerify(location: Path, hash: String, algorithm: String): Boolean {
+    suspend fun HttpStatement.executeVerify(location: Path, hash: String, algorithm: String, progressCallback: suspend (Long) -> Unit = {}): Boolean {
         return execute { response ->
             if (response.status != HttpStatusCode.OK) {
                 return@execute false
             }
+            var pos = 0L
             val digest = MessageDigest.getInstance(algorithm)
             val channel = response.bodyAsChannel()
             while (!channel.isClosedForRead) {
@@ -46,6 +67,8 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
                     val bytes = packet.readBytes()
                     location.appendBytes(bytes)
                     digest.update(bytes)
+                    pos += bytes.size
+                    progressCallback(pos)
                 }
             }
             if (!digest.digest().contentEquals(hash.hexToByteArray())) {
@@ -57,16 +80,17 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    suspend fun downloadFileVerified(target: Path, url: String, hash: String, algorithm: String): Boolean {
+    suspend fun downloadFileVerified(target: Path, url: String, hash: String, algorithm: String, progressCallback: suspend (Long) -> Unit = {}): Boolean {
         if (target.exists() && target.isRegularFile()) {
             if (HashAlgorithms.getFileHash(target, algorithm).contentEquals(hash.hexToByteArray())) {
+                progressCallback(target.fileSize())
                 return true
             }
         }
         val tmpFile = withContext(Dispatchers.IO) {
             Files.createTempFile("nebula-", null)
         }
-        if (!client.prepareGet(url).executeVerify(tmpFile, hash, algorithm)) {
+        if (!client.prepareGet(url).executeVerify(tmpFile, hash, algorithm, progressCallback)) {
             tmpFile.deleteIfExists()
             return false
         }

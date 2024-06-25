@@ -13,7 +13,7 @@ repositories {
 dependencies {
     implementation(libs.bundles.ktor.client)
     implementation(project(":core"))
-    testImplementation(libs.ktor.client.java)
+    testImplementation(libs.bundles.test)
 }
 
 kotlin {

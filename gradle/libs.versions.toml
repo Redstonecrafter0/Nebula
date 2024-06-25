@@ -3,6 +3,8 @@ nebula = "0.1.0"
 
 kotlin = "2.0.0"
 ktor = "2.3.12"
+log4j2 = "2.23.1"
+progressbar = "0.10.1"
 
 [libraries]
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -10,9 +12,12 @@ ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-serialization-kotlinx-xml = { module = "io.ktor:ktor-serialization-kotlinx-xml", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+log4j2-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j2" }
+progressbar = { module = "me.tongfei:progressbar", version.ref = "progressbar" }
 
 [bundles]
 ktor-client = [ "ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-serialization-kotlinx-xml" ]
+test = [ "ktor-client-java", "log4j2-slf4j", "progressbar" ]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -12,14 +12,34 @@ import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.concurrent.thread
 
-class DownloadManager internal constructor(val client: HttpClient) {
+class DownloadManager internal constructor(private val client: HttpClient) {
 
     private val deque = ArrayDeque<DownloadQueueItem>()
+    private val listeners = mutableListOf<DownloadEventListener>()
 
     private var running = false
 
-    fun enqueue(block: suspend DownloadQueueItem.() -> Unit) {
-        deque += DownloadQueueItem(client, block).apply { manager = this@DownloadManager }
+    fun enqueue(block: suspend DownloadQueueItem.() -> Unit): DownloadQueueItem {
+        val item = DownloadQueueItem(client, block).apply {
+            manager = this@DownloadManager
+            listeners = this@DownloadManager.listeners.toList()
+        }
+        deque += item
+        return item
+    }
+
+    fun addEventListener(block: DownloadEventListener.Builder.() -> Unit) {
+        val builder = DownloadEventListener.Builder()
+        builder.block()
+        addEventListener(builder.build())
+    }
+
+    fun addEventListener(listener: DownloadEventListener) {
+        listeners += listener
+    }
+
+    fun removeEventListener(listener: DownloadEventListener) {
+        listeners -= listener
     }
 
     fun start() {

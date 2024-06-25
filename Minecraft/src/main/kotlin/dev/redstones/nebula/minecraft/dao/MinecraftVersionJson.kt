@@ -23,7 +23,7 @@ data class MinecraftVersionJson(
         val id: String,
         val sha1: String,
         val size: Int,
-        val totalSize: Int,
+        val totalSize: Long,
         val url: String
     )
 
