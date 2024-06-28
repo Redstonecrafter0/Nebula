@@ -14,31 +14,38 @@ suspend fun main() {
         maxStep = 7
         steps.extraMessage = "Loading versions"
         steps.step()
+
         val versions = listMinecraftVersions()!!
         val latest = versions.versions.first { it.id == versions.latest.release }
-        val outputFile = Path.of("test/test.json")
+
+        val outputFile = Path.of("test/minecraft/single/test.json")
         steps.extraMessage = "Loading ${latest.id} json"
         if (!downloadMinecraftVersionJson(latest, outputFile)) {
             System.err.println("failed")
         }
+
         steps.extraMessage = "Loading assets"
-        if (!downloadMinecraftAssets(outputFile, Path.of("test/assets.json"), Path.of("test/objects"))) {
+        if (!downloadMinecraftAssets(outputFile, Path.of("test/minecraft/single/assets.json"), Path.of("test/minecraft/single/objects"))) {
             System.err.println("failed")
         }
+
         steps.extraMessage = "Loading client jar"
-        if (!downloadMinecraftClientJar(outputFile, Path.of("test/client.jar"))) {
+        if (!downloadMinecraftClientJar(outputFile, Path.of("test/minecraft/single/client.jar"))) {
             System.err.println("failed")
         }
+
         steps.extraMessage = "Loading server jar"
-        if (!downloadMinecraftServerJar(outputFile, Path.of("test/server.jar"))) {
+        if (!downloadMinecraftServerJar(outputFile, Path.of("test/minecraft/single/server.jar"))) {
             System.err.println("failed")
         }
+
         steps.extraMessage = "Loading logging config"
-        if (!downloadMinecraftClientLoggingConfig(outputFile, Path.of("test/client-1.12.xml"))) {
+        if (!downloadMinecraftClientLoggingConfig(outputFile, Path.of("test/minecraft/single/client-1.12.xml"))) {
             System.err.println("failed")
         }
+
         steps.extraMessage = "Loading libraries"
-        if (!downloadMinecraftClientLibraries(outputFile, Path.of("test/libraries"))) {
+        if (!downloadMinecraftClientLibraries(outputFile, Path.of("test/minecraft/single/libraries"))) {
             System.err.println("failed")
         }
     }.addEventListener {

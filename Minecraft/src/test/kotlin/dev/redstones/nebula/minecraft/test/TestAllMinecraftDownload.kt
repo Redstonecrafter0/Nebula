@@ -26,31 +26,37 @@ suspend fun main() {
             progress.extraMessage = "Loading ${version.id}"
             progress.step()
             progress.refresh()
-            val outputFile = Path.of("test/versions/${version.id}/client.json")
+
+            val outputFile = Path.of("test/minecraft/all/versions/${version.id}/client.json")
             if (!downloadMinecraftVersionJson(version, outputFile)) {
                 System.err.println("failed")
             }
             val versionJson = json.decodeFromString<MinecraftVersionJson>(outputFile.readText())
-            val assetIndexFile = Path.of("test/assets/${versionJson.assetIndex.id}.json")
+
+            val assetIndexFile = Path.of("test/minecraft/all/assets/${versionJson.assetIndex.id}.json")
             if (!assetIndexFile.exists() || !assetIndexFile.isRegularFile()) {
-                if (!downloadMinecraftAssets(versionJson.assetIndex, assetIndexFile, Path.of("test/objects"))) {
+                if (!downloadMinecraftAssets(versionJson.assetIndex, assetIndexFile, Path.of("test/minecraft/all/objects"))) {
                     System.err.println("failed")
                 }
             }
-            if (!downloadMinecraftClientJar(versionJson, Path.of("test/versions/${version.id}/client.jar"))) {
+
+            if (!downloadMinecraftClientJar(versionJson, Path.of("test/minecraft/all/versions/${version.id}/client.jar"))) {
                 System.err.println("failed")
             }
+
             if (versionJson.downloads.server != null) {
-                if (!downloadMinecraftServerJar(versionJson, Path.of("test/versions/${version.id}/server.jar"))) {
+                if (!downloadMinecraftServerJar(versionJson, Path.of("test/minecraft/all/versions/${version.id}/server.jar"))) {
                     System.err.println("failed")
                 }
             }
+
             if (versionJson.logging != null) {
-                if (!downloadMinecraftClientLoggingConfig(versionJson, Path.of("test/logging/${versionJson.logging!!.client.file.id}"))) {
+                if (!downloadMinecraftClientLoggingConfig(versionJson, Path.of("test/minecraft/all/logging/${versionJson.logging!!.client.file.id}"))) {
                     System.err.println("failed")
                 }
             }
-            if (!downloadMinecraftClientLibraries(versionJson, Path.of("test/libraries"))) {
+
+            if (!downloadMinecraftClientLibraries(versionJson, Path.of("test/minecraft/all/libraries"))) {
                 System.err.println("failed")
             }
         }

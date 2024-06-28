@@ -4,3 +4,4 @@ plugins {
 rootProject.name = "Nebula"
 include("core")
 include("Minecraft")
+include("GitHub")

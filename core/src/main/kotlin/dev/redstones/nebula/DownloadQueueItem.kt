@@ -48,7 +48,7 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
     }
 
     suspend fun Boolean.notifyFinishedDefault(): Boolean {
-        notifyFinished(this, if (this) "Wrong response code or hash failure" else null)
+        notifyFinished(this, if (this) "Wrong response code, size or hash failure" else null)
         return this
     }
 
@@ -79,8 +79,28 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
         }
     }
 
+    suspend fun HttpStatement.executeUnverified(location: Path, expectedFileSize: Long? = null, progressCallback: suspend (Long) -> Unit = {}): Boolean {
+        return execute { response ->
+            if (response.status != HttpStatusCode.OK) {
+                return@execute false
+            }
+            var pos = 0L
+            val channel = response.bodyAsChannel()
+            while (!channel.isClosedForRead) {
+                val packet = channel.readRemaining(8192L)
+                while (!packet.isEmpty) {
+                    val bytes = packet.readBytes()
+                    location.appendBytes(bytes)
+                    pos += bytes.size
+                    progressCallback(pos)
+                }
+            }
+            return@execute expectedFileSize == null || expectedFileSize == pos
+        }
+    }
+
     @OptIn(ExperimentalStdlibApi::class)
-    suspend fun downloadFileVerified(target: Path, url: String, hash: String, algorithm: String, progressCallback: suspend (Long) -> Unit = {}): Boolean {
+    suspend fun downloadFileVerified(target: Path, url: String, hash: String, algorithm: String, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
         if (target.exists() && target.isRegularFile()) {
             if (HashAlgorithms.getFileHash(target, algorithm).contentEquals(hash.hexToByteArray())) {
                 progressCallback(target.fileSize())
@@ -90,7 +110,27 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
         val tmpFile = withContext(Dispatchers.IO) {
             Files.createTempFile("nebula-", null)
         }
-        if (!client.prepareGet(url).executeVerify(tmpFile, hash, algorithm, progressCallback)) {
+        if (!client.prepareGet(url, requestBuilder).executeVerify(tmpFile, hash, algorithm, progressCallback)) {
+            tmpFile.deleteIfExists()
+            return false
+        }
+        target.deleteIfExists()
+        target.parent.toFile().mkdirs()
+        tmpFile.moveTo(target)
+        return true
+    }
+
+    suspend fun downloadFileUnverified(target: Path, url: String, expectedFileSize: Long? = null, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
+        if (target.exists() && target.isRegularFile()) {
+            if (expectedFileSize != null && expectedFileSize == target.fileSize()) {
+                progressCallback(target.fileSize())
+                return true
+            }
+        }
+        val tmpFile = withContext(Dispatchers.IO) {
+            Files.createTempFile("nebula-", null)
+        }
+        if (!client.prepareGet(url, requestBuilder).executeUnverified(tmpFile, expectedFileSize, progressCallback)) {
             tmpFile.deleteIfExists()
             return false
         }
