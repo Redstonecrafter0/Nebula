@@ -1,21 +1,18 @@
 package dev.redstones.nebula.minecraft.dao
 
-import dev.redstones.nebula.minecraft.dao.MinecraftVersionManifestV2.Type
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class MinecraftVersionJson(
     val assetIndex: AssetIndex,
     val downloads: Downloads,
     val libraries: List<Library>,
-    val logging: Logging
+    val logging: Logging? = null
 ) {
 
     @Serializable
@@ -30,7 +27,7 @@ data class MinecraftVersionJson(
     @Serializable
     data class Downloads(
         val client: Download,
-        val server: Download
+        val server: Download? = null
     ) {
 
         @Serializable
@@ -51,7 +48,7 @@ data class MinecraftVersionJson(
 
         @Serializable
         data class Download(
-            val artifact: Artifact,
+            val artifact: Artifact? = null,
             val classifiers: Map<String, Artifact> = emptyMap()
         ) {
 

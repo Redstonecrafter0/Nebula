@@ -14,7 +14,7 @@ suspend fun main() {
         maxStep = 7
         steps.extraMessage = "Loading versions"
         steps.step()
-        val versions = listVersionsMinecraft()!!
+        val versions = listMinecraftVersions()!!
         val latest = versions.versions.first { it.id == versions.latest.release }
         val outputFile = Path.of("test/test.json")
         steps.extraMessage = "Loading ${latest.id} json"

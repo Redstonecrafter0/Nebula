@@ -60,10 +60,7 @@ class DownloadManager internal constructor(private val client: HttpClient) {
     }
 
     suspend fun runSingle(): Boolean {
-        val queueItem = deque.removeFirstOrNull()
-        if (queueItem == null) {
-            return false
-        }
+        val queueItem = deque.removeFirstOrNull() ?: return false
         queueItem.download(queueItem)
         return true
     }
