@@ -9,6 +9,7 @@ import kotlin.io.path.inputStream
 object HashAlgorithms {
 
     const val SHA1 = "SHA-1"
+    const val SHA256 = "SHA-256"
 
     suspend fun getFileHash(file: Path, algorithm: String): ByteArray {
         return withContext(Dispatchers.IO) {

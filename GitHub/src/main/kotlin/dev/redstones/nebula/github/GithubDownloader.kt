@@ -78,6 +78,19 @@ suspend fun DownloadQueueItem.downloadGitHubReleaseAsset(asset: GitHubRelease.As
     }.notifyFinishedDefault()
 }
 
+suspend fun DownloadQueueItem.downloadGitHubReleaseAssetVerified(asset: GitHubRelease.Asset, target: Path, hash: String, algorithm: String, token: String? = null): Boolean {
+    notifyStart(asset.size)
+    return downloadFileVerified(target, asset.browserDownloadUrl, hash, algorithm, {
+        if (token != null) {
+            headers {
+                header("Authorization", "Bearer $token")
+            }
+        }
+    }) {
+        notifyProgress(it)
+    }.notifyFinishedDefault()
+}
+
 @OptIn(ExperimentalPathApi::class)
 suspend fun DownloadQueueItem.downloadGitHubRelease(release: GitHubRelease, target: Path, token: String? = null): Boolean {
     notifyStart(release.assets.sumOf { it.size })

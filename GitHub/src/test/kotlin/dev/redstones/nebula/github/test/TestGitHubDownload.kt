@@ -30,8 +30,8 @@ suspend fun main() {
         }
         steps.extraMessage = "Downloading single asset"
         downloadGitHubReleaseAsset(asset, assetTarget)
-        println("Last page ${lastPage}")
-        println("Last page ${lastReleasePage}")
+        println("Last page $lastPage")
+        println("Last page $lastReleasePage")
     }.addEventListener {
         onStart { step: Int, _: Int, max: Long? ->
             subBar = if (max == null) {
