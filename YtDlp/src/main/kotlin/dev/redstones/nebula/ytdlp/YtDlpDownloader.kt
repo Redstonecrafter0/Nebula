@@ -38,7 +38,7 @@ suspend fun DownloadQueueItem.downloadYtDlp(release: GitHubRelease, target: Path
             "_$it"
         }
     }
-    val name = "yt-dlp$os$arch" + if (os == "windows") ".exe" else ""
+    val name = "yt-dlp$os$arch" + if (javaOs.startsWith("windows")) ".exe" else ""
     val asset = release.assets.firstOrNull { it.name == name }
     if (asset == null || (arch != null && "." in arch)) {
         notifyStart()
