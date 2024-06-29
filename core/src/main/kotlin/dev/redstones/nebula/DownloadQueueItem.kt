@@ -18,22 +18,23 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
     internal var manager: DownloadManager? = null
     internal var listeners = emptyList<DownloadEventListener>()
     private var step = -1
+    private var started = false
     var maxStep = 0
 
     suspend fun notifyStart(max: Long? = null) {
-        step++
-        listeners.forEach { it.onStart(step, maxStep, max) }
+        if (!started) {
+            step++
+            listeners.forEach { it.onStart(step, maxStep, max) }
+            started = true
+        }
     }
 
     suspend fun notifyProgress(pos: Long? = null) {
         listeners.forEach { it.onProgress(pos) }
     }
 
-    suspend fun onRetry() {
-        listeners.forEach { it.onRetry() }
-    }
-
     suspend fun notifyFinished(success: Boolean = true, reason: String? = null) {
+        started = false
         listeners.forEach { it.onFinished(success, reason) }
     }
 

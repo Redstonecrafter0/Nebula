@@ -65,8 +65,10 @@ suspend fun DownloadQueueItem.listGitHubReleases(fullName: String, perPage: Int 
     return (response.body<List<GitHubRelease>>() to (response.lastPage ?: page)).also { notifyFinished() }
 }
 
-suspend fun DownloadQueueItem.downloadGitHubReleaseAsset(asset: GitHubRelease.Asset, target: Path, token: String? = null): Boolean {
-    notifyStart(asset.size)
+suspend fun DownloadQueueItem.downloadGitHubReleaseAsset(asset: GitHubRelease.Asset, target: Path, token: String? = null, silent: Boolean = false): Boolean {
+    if (!silent) {
+        notifyStart(asset.size)
+    }
     return downloadFileUnverified(target, asset.browserDownloadUrl, asset.size, {
         if (token != null) {
             headers {
@@ -74,8 +76,10 @@ suspend fun DownloadQueueItem.downloadGitHubReleaseAsset(asset: GitHubRelease.As
             }
         }
     }) {
-        notifyProgress(it)
-    }.notifyFinishedDefault()
+        if (!silent) {
+            notifyProgress(it)
+        }
+    }.let { if (!silent) it.notifyFinishedDefault() else it }
 }
 
 suspend fun DownloadQueueItem.downloadGitHubReleaseAssetVerified(asset: GitHubRelease.Asset, target: Path, hash: String, algorithm: String, token: String? = null): Boolean {
