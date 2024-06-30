@@ -1,10 +1,13 @@
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.dokka)
+    `maven-publish`
+    signing
+    java
 }
 
 group = "dev.redstones.nebula.core"
-version = libs.versions.nebula.get()
 
 repositories {
     mavenCentral()
@@ -13,8 +16,4 @@ repositories {
 dependencies {
     implementation(libs.bundles.ktor.client)
     testImplementation(libs.bundles.test)
-}
-
-kotlin {
-    jvmToolchain(17)
 }

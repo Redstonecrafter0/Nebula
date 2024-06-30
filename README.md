@@ -5,11 +5,10 @@ An easy-to-use download manager.
 
 Goals:
 - Notify on:
-  - Start(hasProgress: Boolean)
-  - Progress
-  - Success
+  - Start(step: Int, maxStep: Int, max: Long?)
+  - Progress(pos: Long?)
   - Retry
-  - Failure(final: Boolean, reason: String)
+  - Finished(success: Boolean, reason: String)
 - Use APIs to filter for fixed/latest version
 - Verify integrity
-- Save to set location
+- Save to specified location without partial downloads

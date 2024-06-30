@@ -1,0 +1,104 @@
+on:
+  workflow_call:
+    inputs:
+      build-command:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      prerelease:
+        type: string
+        default: ''
+    secrets:
+      GPG_KEY:
+        required: true
+      MAVEN_AUTH:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTOR: ${{ github.GITHUB_ACTOR }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    environment: ${{ inputs.environment }}
+    permissions:
+      packages: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set short git commit SHA
+        if: inputs.environment == 'development'
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "NIGHTLY_COMMIT=$calculatedSha" >> $GITHUB_ENV
+      - name: Set prerelease version
+        if: inputs.environment == 'staging'
+        run: |
+          echo "CI_PRERELEASE=${{ inputs.prerelease }}" >> $GITHUB_ENV
+      - name: Import GPG key
+        run: echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_KEY }}
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 11
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Build with Gradle
+        run: ./gradlew clean ${{ inputs.build-command }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: build/libs/*
+      - name: Create bundle.zip
+        if: inputs.environment == 'production'
+        run: |
+          cd build/repos/local
+          zip -r ../../../bundle.zip .
+          cd ../../..
+      - name: Upload to Maven Central Portal
+        if: inputs.environment == 'production'
+        run: |
+          curl --request POST \
+          --verbose \
+          --header "Authorization: Bearer $MAVEN_AUTH" \
+          --form bundle=@bundle.zip \
+          https://central.sonatype.com/api/v1/publisher/upload?publishingType=USER_MANAGED
+        env:
+          MAVEN_AUTH: ${{ secrets.MAVEN_AUTH }}
+      - name: Get Gradle version
+        if: inputs.environment != 'development'
+        run: echo "RELEASE_VERSION=$(./gradlew -q getVersion)" >> $GITHUB_ENV
+      - name: Create GitHub Release
+        if: inputs.environment != 'development'
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            const fs = require('fs');
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: true,
+                generate_release_notes: true,
+                name: 'MediaPlayerInfo ${{ env.RELEASE_VERSION }}',
+                owner: context.repo.owner,
+                prerelease: ${{ inputs.prerelease != '' }},
+                repo: context.repo.repo,
+                tag_name: 'v${{ env.RELEASE_VERSION }}'
+              });
+            
+              for (const file of fs.readdirSync('build/libs')) {
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: response.data.id,
+                  name: file,
+                  data: fs.readFileSync('build/libs/' + file)
+                });
+              }
+            } catch (error) {
+              core.setFailed(error.message);
+            }
