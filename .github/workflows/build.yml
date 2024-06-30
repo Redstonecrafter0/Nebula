@@ -52,7 +52,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          path: build/libs/*
+          path: build/repos/local/*
       - name: Create bundle.zip
         if: inputs.environment == 'production'
         run: |
