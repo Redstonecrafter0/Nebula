@@ -83,7 +83,7 @@ jobs:
               const response = await github.rest.repos.createRelease({
                 draft: true,
                 generate_release_notes: true,
-                name: 'MediaPlayerInfo ${{ env.RELEASE_VERSION }}',
+                name: 'Nebula ${{ env.RELEASE_VERSION }}',
                 owner: context.repo.owner,
                 prerelease: ${{ inputs.prerelease != '' }},
                 repo: context.repo.repo,

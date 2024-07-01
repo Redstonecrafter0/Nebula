@@ -10,6 +10,10 @@ val nightlyCommitHash: String? = System.getenv("NIGHTLY_COMMIT")
 val preRelease: String? = System.getenv("CI_PRERELEASE")
 version = "0.1.0${if (preRelease != null) "-${preRelease}" else ""}${if (nightlyCommitHash != null) "+${nightlyCommitHash}" else ""}"
 
+repositories {
+    mavenCentral()
+}
+
 tasks.register("getVersion") {
     doLast {
         println(version)
