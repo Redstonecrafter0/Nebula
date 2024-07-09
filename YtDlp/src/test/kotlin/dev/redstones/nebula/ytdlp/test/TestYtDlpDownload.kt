@@ -11,14 +11,7 @@ suspend fun main() {
     val steps = ProgressBar("Steps", 2)
     var subBar: ProgressBar? = null
     val downloader = DownloadManager(Java)
-    downloader.enqueue {
-        maxStep = 2
-        steps.extraMessage = "Loading releases"
-        steps.step()
-        val version = listYtDlpVersions()!!.first.first()
-        steps.extraMessage = "Downloading releases"
-        downloadYtDlp(version, Path.of("test/ytdlp/yt-dlp" + if (System.getProperty("os.name").lowercase().startsWith("windows")) ".exe" else ""))
-    }.addEventListener {
+    downloader.addEventListener {
         onStart { step: Int, _: Int, max: Long? ->
             subBar = if (max == null) {
                 null
@@ -36,5 +29,12 @@ suspend fun main() {
             subBar?.close()
         }
     }
-    downloader.runSingle()
+    downloader.download {
+        maxStep = 2
+        steps.extraMessage = "Loading releases"
+        steps.step()
+        val version = listYtDlpVersions()!!.first.first()
+        steps.extraMessage = "Downloading releases"
+        downloadYtDlp(version, Path.of("test/ytdlp/yt-dlp" + if (System.getProperty("os.name").lowercase().startsWith("windows")) ".exe" else ""))
+    }
 }

@@ -13,7 +13,25 @@ suspend fun main() {
     val steps = ProgressBar("Steps", 4)
     var subBar: ProgressBar? = null
     val downloader = DownloadManager(Java)
-    downloader.enqueue {
+    downloader.addEventListener {
+        onStart { step: Int, _: Int, max: Long? ->
+            subBar = if (max == null) {
+                null
+            } else {
+                ProgressBar("Downloading step $step", max)
+            }
+        }
+        onProgress {
+            if (it != null) {
+                subBar?.stepTo(it)
+            }
+        }
+        onFinished { success, message ->
+            steps.step()
+            subBar?.close()
+        }
+    }
+    downloader.download {
         maxStep = 4
         steps.extraMessage = "Loading versions"
         steps.step()
@@ -32,23 +50,5 @@ suspend fun main() {
         downloadGitHubReleaseAsset(asset, assetTarget)
         println("Last page $lastPage")
         println("Last page $lastReleasePage")
-    }.addEventListener {
-        onStart { step: Int, _: Int, max: Long? ->
-            subBar = if (max == null) {
-                null
-            } else {
-                ProgressBar("Downloading step $step", max)
-            }
-        }
-        onProgress {
-            if (it != null) {
-                subBar?.stepTo(it)
-            }
-        }
-        onFinished { success, message ->
-            steps.step()
-            subBar?.close()
-        }
     }
-    downloader.runSingle()
 }

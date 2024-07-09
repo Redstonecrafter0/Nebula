@@ -20,6 +20,8 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
     private var step = -1
     private var started = false
     var maxStep = 0
+    internal var success = false
+        private set
 
     suspend fun notifyStart(max: Long? = null) {
         if (!started) {
@@ -35,6 +37,7 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
 
     suspend fun notifyFinished(success: Boolean = true, reason: String? = null) {
         started = false
+        this.success = success
         listeners.forEach { it.onFinished(success, reason) }
     }
 

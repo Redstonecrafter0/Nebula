@@ -5,27 +5,32 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.serialization.kotlinx.xml.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.collections.ArrayDeque
-import kotlin.concurrent.thread
 
 class DownloadManager internal constructor(private val client: HttpClient) {
 
-    private val deque = ArrayDeque<DownloadQueueItem>()
     private val listeners = mutableListOf<DownloadEventListener>()
 
-    private var running = false
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val context = Dispatchers.IO.limitedParallelism(1)
+    private val scope = CoroutineScope(context)
 
-    fun enqueue(block: suspend DownloadQueueItem.() -> Unit): DownloadQueueItem {
+    fun enqueue(block: suspend DownloadQueueItem.() -> Unit) {
+        scope.async {
+            download(block)
+        }
+    }
+
+    suspend fun download(block: suspend DownloadQueueItem.() -> Unit): Boolean {
         val item = DownloadQueueItem(client, block).apply {
             manager = this@DownloadManager
             listeners = this@DownloadManager.listeners.toList()
         }
-        deque += item
-        return item
+        item.download(item)
+        return item.success
     }
 
     fun addEventListener(block: DownloadEventListener.Builder.() -> Unit) {
@@ -40,33 +45,6 @@ class DownloadManager internal constructor(private val client: HttpClient) {
 
     fun removeEventListener(listener: DownloadEventListener) {
         listeners -= listener
-    }
-
-    fun start() {
-        running = true
-        thread(name = "DownloadManager") {
-            runSync()
-        }
-    }
-
-    fun runSync() {
-        runBlocking {
-            while (running) {
-                if (!runSingle()) {
-                    delay(100)
-                }
-            }
-        }
-    }
-
-    suspend fun runSingle(): Boolean {
-        val queueItem = deque.removeFirstOrNull() ?: return false
-        queueItem.download(queueItem)
-        return true
-    }
-
-    fun stop() {
-        running = false
     }
 
 }

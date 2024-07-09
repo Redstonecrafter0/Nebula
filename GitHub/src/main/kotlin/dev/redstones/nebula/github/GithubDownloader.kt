@@ -9,8 +9,10 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
 
 // page=515>; rel="last"
@@ -128,7 +130,12 @@ suspend fun DownloadQueueItem.downloadGitHubRelease(release: GitHubRelease, targ
     }
     target.deleteIfExists()
     target.parent.toFile().mkdirs()
-    tmpPath.moveTo(target)
+    try {
+        tmpPath.moveTo(target)
+    } catch (_: DirectoryNotEmptyException) { // cross device on linux when directory is moved
+        target.deleteRecursively()
+        tmpPath.copyToRecursively(target, followLinks = false, overwrite = true)
+    }
     notifyFinished()
     return true
 }

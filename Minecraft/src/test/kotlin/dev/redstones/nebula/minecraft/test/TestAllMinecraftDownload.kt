@@ -18,7 +18,7 @@ private val json = Json {
 suspend fun main() {
     val progress = ProgressBar("Versions", 0)
     val downloader = DownloadManager(Java)
-    downloader.enqueue {
+    downloader.download {
         progress.extraMessage = "Loading versions"
         val versions = listMinecraftVersions()!!
         progress.maxHint(versions.versions.size.toLong())
@@ -61,5 +61,4 @@ suspend fun main() {
             }
         }
     }
-    downloader.runSingle()
 }

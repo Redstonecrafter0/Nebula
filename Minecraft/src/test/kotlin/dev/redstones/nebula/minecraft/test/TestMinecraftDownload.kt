@@ -10,7 +10,25 @@ suspend fun main() {
     val steps = ProgressBar("Steps", 7)
     var subBar: ProgressBar? = null
     val downloader = DownloadManager(Java)
-    downloader.enqueue {
+    downloader.addEventListener {
+        onStart { step: Int, _: Int, max: Long? ->
+            subBar = if (max == null) {
+                null
+            } else {
+                ProgressBar("Downloading step $step", max)
+            }
+        }
+        onProgress {
+            if (it != null) {
+                subBar?.stepTo(it)
+            }
+        }
+        onFinished { success, message ->
+            steps.step()
+            subBar?.close()
+        }
+    }
+    downloader.download {
         maxStep = 7
         steps.extraMessage = "Loading versions"
         steps.step()
@@ -48,23 +66,5 @@ suspend fun main() {
         if (!downloadMinecraftClientLibraries(outputFile, Path.of("test/minecraft/single/libraries"))) {
             System.err.println("failed")
         }
-    }.addEventListener {
-        onStart { step: Int, _: Int, max: Long? ->
-            subBar = if (max == null) {
-                null
-            } else {
-                ProgressBar("Downloading step $step", max)
-            }
-        }
-        onProgress {
-            if (it != null) {
-                subBar?.stepTo(it)
-            }
-        }
-        onFinished { success, message ->
-            steps.step()
-            subBar?.close()
-        }
     }
-    downloader.runSingle()
 }
