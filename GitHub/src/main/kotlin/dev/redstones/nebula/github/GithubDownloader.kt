@@ -3,6 +3,7 @@ package dev.redstones.nebula.github
 import dev.redstones.nebula.DownloadQueueItem
 import dev.redstones.nebula.github.dao.GitHubRelease
 import dev.redstones.nebula.github.dao.GitHubSearchResults
+import dev.redstones.nebula.util.moveToSafely
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -128,7 +129,7 @@ suspend fun DownloadQueueItem.downloadGitHubRelease(release: GitHubRelease, targ
     }
     target.deleteIfExists()
     target.parent.toFile().mkdirs()
-    tmpPath.moveTo(target)
+    tmpPath.moveToSafely(target)
     notifyFinished()
     return true
 }

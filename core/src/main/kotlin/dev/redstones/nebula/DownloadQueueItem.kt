@@ -1,6 +1,7 @@
 package dev.redstones.nebula
 
 import dev.redstones.nebula.util.HashAlgorithms
+import dev.redstones.nebula.util.moveToSafely
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -8,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
