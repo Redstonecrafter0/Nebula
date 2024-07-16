@@ -3,16 +3,15 @@ package dev.redstones.nebula.github
 import dev.redstones.nebula.DownloadQueueItem
 import dev.redstones.nebula.github.dao.GitHubRelease
 import dev.redstones.nebula.github.dao.GitHubSearchResults
+import dev.redstones.nebula.util.moveToSafely
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
 
 // page=515>; rel="last"
@@ -130,12 +129,7 @@ suspend fun DownloadQueueItem.downloadGitHubRelease(release: GitHubRelease, targ
     }
     target.deleteIfExists()
     target.parent.toFile().mkdirs()
-    try {
-        tmpPath.moveTo(target)
-    } catch (_: DirectoryNotEmptyException) { // cross device on linux when directory is moved
-        target.deleteRecursively()
-        tmpPath.copyToRecursively(target, followLinks = false, overwrite = true)
-    }
+    tmpPath.moveToSafely(target)
     notifyFinished()
     return true
 }
