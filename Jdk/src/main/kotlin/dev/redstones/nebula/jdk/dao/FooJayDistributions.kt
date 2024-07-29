@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FooJayDistributionsResponse(
-    val result: List<FooJayDistribution>,
+    val result: List<FooJayDistribution?>,
     val message: String = ""
 )
 
@@ -17,7 +17,7 @@ data class FooJayDistribution(
     val available: Boolean,
     @SerialName("build_of_openjdk") val buildOfOpenJdk: Boolean,
     @SerialName("build_of_graalvm") val buildOfGraalVm: Boolean,
-    @SerialName("official_url") val officialUrl: String,
+    @SerialName("official_url") val officialUrl: String? = "",
     val synonyms: Set<String>,
     val versions: List<String>
 )

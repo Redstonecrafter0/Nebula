@@ -11,6 +11,11 @@ object HashAlgorithms {
     const val SHA1 = "SHA-1"
     const val SHA256 = "SHA-256"
 
+    private val variants = mapOf(
+        "sha1" to SHA1,
+        "sha256" to SHA256
+    )
+
     suspend fun getFileHash(file: Path, algorithm: String): ByteArray {
         return withContext(Dispatchers.IO) {
             val digest = MessageDigest.getInstance(algorithm)
@@ -24,5 +29,7 @@ object HashAlgorithms {
             digest.digest()
         }
     }
+
+    operator fun get(variant: String): String? = variants[variant]
 
 }

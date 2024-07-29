@@ -8,7 +8,6 @@ import io.ktor.serialization.kotlinx.xml.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import java.util.*
-import kotlin.collections.ArrayDeque
 
 class DownloadManager internal constructor(private val client: HttpClient) {
 

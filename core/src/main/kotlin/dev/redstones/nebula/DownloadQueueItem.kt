@@ -34,6 +34,9 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
     }
 
     suspend fun notifyProgress(pos: Long? = null) {
+        if (pos == 40L) {
+            println("lol")
+        }
         listeners.forEach { it.onProgress(pos) }
     }
 

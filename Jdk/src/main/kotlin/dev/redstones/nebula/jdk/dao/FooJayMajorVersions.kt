@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FooJayMajorVersionsResponse(
-    val result: List<FooJayMajorVersion>,
+    val result: List<FooJayMajorVersion?>,
     val message: String = ""
 )
 

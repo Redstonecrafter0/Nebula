@@ -1,10 +1,11 @@
 package dev.redstones.nebula.jdk.test
 
 import dev.redstones.nebula.DownloadManager
-import dev.redstones.nebula.github.downloadGitHubRelease
-import dev.redstones.nebula.github.downloadGitHubReleaseAsset
-import dev.redstones.nebula.github.listGitHubReleases
-import dev.redstones.nebula.github.searchGitHub
+import dev.redstones.nebula.jdk.dao.FooJayPackage
+import dev.redstones.nebula.jdk.downloadJdkPackage
+import dev.redstones.nebula.jdk.listJdkDistributions
+import dev.redstones.nebula.jdk.listJdkMajorVersions
+import dev.redstones.nebula.jdk.listJdkPackages
 import io.ktor.client.engine.java.*
 import me.tongfei.progressbar.ProgressBar
 import java.nio.file.Path
@@ -13,26 +14,7 @@ suspend fun main() {
     val steps = ProgressBar("Steps", 4)
     var subBar: ProgressBar? = null
     val downloader = DownloadManager(Java)
-    downloader.enqueue {
-        maxStep = 4
-        steps.extraMessage = "Loading versions"
-        steps.step()
-        val (result, lastPage) = searchGitHub("topic:schizoid+schizoid")!!
-        steps.extraMessage = "Loading releases"
-        val (releases, lastReleasePage) = listGitHubReleases(result.items.first().fullName)!!
-        steps.extraMessage = "Downloading releases"
-        downloadGitHubRelease(releases.first(), Path.of("test/github/release"))
-        val asset = releases.first().assets.first()
-        val assetDir = Path.of("test/github/asset")
-        val assetTarget = assetDir.resolve(asset.name)
-        if (!assetTarget.toFile().canonicalPath.startsWith(assetDir.toFile().canonicalPath)) {
-            throw IllegalStateException("trying to write outside of allowed path")
-        }
-        steps.extraMessage = "Downloading single asset"
-        downloadGitHubReleaseAsset(asset, assetTarget)
-        println("Last page $lastPage")
-        println("Last page $lastReleasePage")
-    }.addEventListener {
+    downloader.addEventListener {
         onStart { step: Int, _: Int, max: Long? ->
             subBar = if (max == null) {
                 null
@@ -50,5 +32,22 @@ suspend fun main() {
             subBar?.close()
         }
     }
-    downloader.runSingle()
+    downloader.download {
+        steps.extraMessage = "Loading distributions"
+        steps.step()
+        val distributions = listJdkDistributions()!!
+        steps.extraMessage = "Loading releases"
+        val versions = listJdkMajorVersions()!!
+        steps.extraMessage = "Loading packages"
+        val packages = mutableMapOf<Pair<String, Int>, FooJayPackage>()
+        for (i in distributions.map { it.name }) {
+            for (j in versions) {
+                packages += (i to j.majorVersion) to (listJdkPackages(j.majorVersion, i)?.firstOrNull { it.operatingSystem == "linux" || it.operatingSystem == "windows" } ?: continue)
+            }
+        }
+        steps.extraMessage = "Downloading packages"
+        for (i in packages) {
+            downloadJdkPackage(i.value, Path.of("test/jdk/${i.key.first}/${i.key.second}/${i.value.javaVersion}"))
+        }
+    }
 }

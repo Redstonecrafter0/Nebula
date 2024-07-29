@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FooJayPackagesResponse(
-    val result: List<FooJayPackage>,
+    val result: List<FooJayPackage?>,
     val message: String = ""
 )
 
@@ -27,14 +27,14 @@ data class FooJayPackage(
     val fpu: String,
     @SerialName("package_type") val packageType: String,
     @SerialName("javafx_bundled") val javafxBundled: Boolean,
-    @SerialName("directly_downloadable") val directlyDownloadable: String,
+    @SerialName("directly_downloadable") val directlyDownloadable: Boolean,
     val filename: String,
     val links: Links,
     @SerialName("free_use_in_production") val freeUseInProduction: Boolean,
-    @SerialName("tck_tested") val tckTested: String,
-    @SerialName("tck_cert_uri") val tckCertUri: String,
-    @SerialName("aqavit_tested") val aqavitTested: String,
-    @SerialName("aqavit_cert_uri") val aqavitCertUri: String,
+    @SerialName("tck_tested") val tckTested: String = "no",
+    @SerialName("tck_cert_uri") val tckCertUri: String = "no",
+    @SerialName("aqavit_tested") val aqavitTested: String = "no",
+    @SerialName("aqavit_cert_uri") val aqavitCertUri: String = "no",
     val size: Long
 ) {
     val isLts: Boolean
