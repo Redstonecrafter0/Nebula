@@ -1,40 +1,37 @@
 package dev.redstones.nebula.cloudflared.test
 
-import dev.redstones.nebula.DownloadManager
+import dev.redstones.nebula.DownloadWatcher
 import dev.redstones.nebula.cloudflared.downloadCloudflared
 import dev.redstones.nebula.cloudflared.listCloudflaredVersions
+import dev.redstones.nebula.installNebula
+import dev.redstones.nebula.toNebula
+import dev.redstones.nebula.watch
+import io.ktor.client.*
 import io.ktor.client.engine.java.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import me.tongfei.progressbar.ProgressBar
 import java.nio.file.Path
 
 suspend fun main() {
-    val steps = ProgressBar("Steps", 2)
-    var subBar: ProgressBar? = null
-    val downloader = DownloadManager(Java)
-    downloader.enqueue {
-        maxStep = 2
-        steps.extraMessage = "Loading releases"
-        steps.step()
-        val version = listCloudflaredVersions()!!.first.first()
-        steps.extraMessage = "Downloading releases"
-        downloadCloudflared(version, Path.of("test/cloudflared/cloudflared" + if (System.getProperty("os.name").lowercase().startsWith("windows")) ".exe" else ""))
-    }.addEventListener {
-        onStart { step: Int, _: Int, max: Long? ->
-            subBar = if (max == null) {
-                null
-            } else {
-                ProgressBar("Downloading step $step", max)
+    val progressBar = ProgressBar("Downloading", 0)
+    val watcher = DownloadWatcher()
+    val client = HttpClient(Java) {
+        installNebula()
+    }.toNebula()
+    coroutineScope {
+        val job = launch {
+            watcher.subscribe().collect {
+                if (it != null) {
+                    progressBar.stepTo(it.pos)
+                    progressBar.maxHint(it.totalSize ?: 0)
+                }
             }
         }
-        onProgress {
-            if (it != null) {
-                subBar?.stepTo(it)
-            }
-        }
-        onFinished { success, message ->
-            steps.step()
-            subBar?.close()
+        launch {
+            val version = client.listCloudflaredVersions()!!.first.first()
+            client.downloadCloudflared(version, Path.of("test/cloudflared/cloudflared" + if (System.getProperty("os.name").lowercase().startsWith("windows")) ".exe" else "")).watch(watcher).collect {}
+            job.cancel()
         }
     }
-    downloader.runSingle()
 }

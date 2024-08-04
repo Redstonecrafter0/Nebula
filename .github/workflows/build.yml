@@ -83,7 +83,7 @@ jobs:
               const response = await github.rest.repos.createRelease({
                 draft: true,
                 generate_release_notes: true,
-                name: 'MediaPlayerInfo ${{ env.RELEASE_VERSION }}',
+                name: 'Nebula ${{ env.RELEASE_VERSION }}',
                 owner: context.repo.owner,
                 prerelease: ${{ inputs.prerelease != '' }},
                 repo: context.repo.repo,
@@ -95,8 +95,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   release_id: response.data.id,
-                  name: file,
-                  data: fs.readFileSync('build/libs/' + file)
+                  name: file
                 });
               }
             } catch (error) {

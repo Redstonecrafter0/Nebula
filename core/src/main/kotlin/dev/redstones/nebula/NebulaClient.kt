@@ -1,56 +1,27 @@
 package dev.redstones.nebula
 
+import dev.redstones.nebula.event.NebulaEventDownloadFinished
 import dev.redstones.nebula.util.HashAlgorithms
 import io.ktor.client.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.xml.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.*
 
-class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQueueItem.() -> Unit) {
+class NebulaClient internal constructor(val client: HttpClient) {
 
-    internal var manager: DownloadManager? = null
-    internal var listeners = emptyList<DownloadEventListener>()
-    private var step = -1
-    private var started = false
-    var maxStep = 0
-
-    suspend fun notifyStart(max: Long? = null) {
-        if (!started) {
-            step++
-            listeners.forEach { it.onStart(step, maxStep, max) }
-            started = true
-        }
-    }
-
-    suspend fun notifyProgress(pos: Long? = null) {
-        listeners.forEach { it.onProgress(pos) }
-    }
-
-    suspend fun notifyFinished(success: Boolean = true, reason: String? = null) {
-        started = false
-        listeners.forEach { it.onFinished(success, reason) }
-    }
-
-    fun addEventListener(block: DownloadEventListener.Builder.() -> Unit) {
-        val builder = DownloadEventListener.Builder()
-        builder.block()
-        addEventListener(builder.build())
-    }
-
-    fun addEventListener(listener: DownloadEventListener) {
-        listeners += listener
-    }
-
-    suspend fun Boolean.notifyFinishedDefault(): Boolean {
-        notifyFinished(this, if (this) "Wrong response code, size or hash failure" else null)
-        return this
+    fun Boolean.toDefaultFinishEvent(): NebulaEventDownloadFinished {
+        return NebulaEventDownloadFinished(this, if (this) "Wrong response code, size or hash failure" else null)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -141,4 +112,13 @@ class DownloadQueueItem(val client: HttpClient, val download: suspend DownloadQu
         return true
     }
 
+}
+
+fun HttpClient.toNebula(): NebulaClient = NebulaClient(this)
+
+fun HttpClientConfig<*>.installNebula() {
+    install(ContentNegotiation) {
+        json(Json { ignoreUnknownKeys = true })
+        xml()
+    }
 }
