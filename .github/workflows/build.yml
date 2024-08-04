@@ -89,15 +89,6 @@ jobs:
                 repo: context.repo.repo,
                 tag_name: 'v${{ env.RELEASE_VERSION }}'
               });
-            
-              for (const file of fs.readdirSync('build/libs')) {
-                await github.rest.repos.uploadReleaseAsset({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: response.data.id,
-                  name: file
-                });
-              }
             } catch (error) {
               core.setFailed(error.message);
             }
