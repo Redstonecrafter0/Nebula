@@ -1,6 +1,6 @@
 package dev.redstones.nebula.jdk.test
 
-import dev.redstones.nebula.DownloadManager
+import dev.redstones.nebula.DownloadWatcher
 import dev.redstones.nebula.jdk.dao.FooJayPackage
 import dev.redstones.nebula.jdk.downloadJdkPackage
 import dev.redstones.nebula.jdk.listJdkDistributions
@@ -13,7 +13,7 @@ import java.nio.file.Path
 suspend fun main() {
     val steps = ProgressBar("Steps", 4)
     var subBar: ProgressBar? = null
-    val downloader = DownloadManager(Java)
+    val downloader = DownloadWatcher(Java)
     downloader.addEventListener {
         onStart { step: Int, _: Int, max: Long? ->
             subBar = if (max == null) {

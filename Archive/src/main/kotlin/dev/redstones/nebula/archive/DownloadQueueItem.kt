@@ -1,6 +1,6 @@
 package dev.redstones.nebula.archive
 
-import dev.redstones.nebula.DownloadQueueItem
+import dev.redstones.nebula.NebulaClient
 import dev.redstones.nebula.util.moveToSafely
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -155,7 +155,7 @@ internal suspend fun HttpStatement.executeVerifyUnpack(target: Path, hash: Strin
 }
 
 @OptIn(ExperimentalPathApi::class)
-suspend fun DownloadQueueItem.downloadFileUnpacked(target: Path, url: String, fileExt: String, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
+suspend fun NebulaClient.downloadFileUnpacked(target: Path, url: String, fileExt: String, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
     val tmpDir = withContext(Dispatchers.IO) {
         Files.createTempDirectory("nebula-")
     }
@@ -170,7 +170,7 @@ suspend fun DownloadQueueItem.downloadFileUnpacked(target: Path, url: String, fi
 }
 
 @OptIn(ExperimentalPathApi::class)
-suspend fun DownloadQueueItem.downloadFileVerifiedUnpacked(target: Path, url: String, hash: String, algorithm: String, fileExt: String, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
+suspend fun NebulaClient.downloadFileVerifiedUnpacked(target: Path, url: String, hash: String, algorithm: String, fileExt: String, requestBuilder: HttpRequestBuilder.() -> Unit = {}, progressCallback: suspend (Long) -> Unit = {}): Boolean {
     val tmpDir = withContext(Dispatchers.IO) {
         Files.createTempDirectory("nebula-")
     }
